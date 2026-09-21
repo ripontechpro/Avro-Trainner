@@ -264,7 +264,7 @@ class HomePage(tk.Frame):
 
         header = tk.Frame(self, bg=BG)
         header.pack(fill="x", pady=(56, 8))
-        tk.Label(header, text="⌨️  Typing Practice", font=("Segoe UI", 30, "bold"),
+        tk.Label(header, text="⌨️  Ripon Typing Tool", font=("Segoe UI", 30, "bold"),
                  bg=BG, fg=TEXT_DARK).pack()
         tk.Label(header, text="একটি মোড বেছে নিন এবং অনুশীলন শুরু করুন",
                  font=("Segoe UI", 13), bg=BG, fg=MUTED).pack(pady=(6, 0))
