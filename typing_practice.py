@@ -25,8 +25,8 @@ import random
 import time
 import tkinter as tk
 from tkinter import ttk, messagebox
-
-
+import avro
+from bijoy_converter import unicode_to_bijoy
 def get_base_dir():
     """
     ডেটা ফাইল (paragraphs*.json) কোন ফোল্ডারে থাকবে তা ঠিক করে।
@@ -427,16 +427,46 @@ class HomePage(tk.Frame):
         header.pack(fill="x", pady=(40, 8))
 
         if controller.logo_image is not None:
-            tk.Label(header, image=controller.logo_image, bg=BG).pack(pady=(0, 10))
+            tk.Label(
+                header,
+                image=controller.logo_image,
+                bg=BG
+            ).pack(pady=(0, 10))
+
+            # Image-এর নিচে Notice
+            notice_label = tk.Label(
+                header,
+                text="📢 নোটিশ: সফটওয়্যার টি রিপন অনেক পরিশ্রম করে তৈরি করেছে। অতএব এর নাম এবং ছবি মডিফাই এর মাধ্যমে পরিবর্তন করে নিচু মানুষিকতার পরিচয় দিবেন না। এটা সম্পুর্ন বিনামুল্যের সফটওয়্যার!",
+                font=("Noto Sans Bengali", 11, "bold"),
+                fg="#8B5E00",
+                bg="#FFF3CD",
+                padx=12,
+                pady=8,
+                wraplength=800,
+                justify="center"
+            )
+            notice_label.pack(fill="x", padx=20, pady=(0, 10))
+
             title_text = "Typing Practice"
+
         else:
             title_text = "⌨️  Typing Practice"
 
-        tk.Label(header, text=title_text, font=("Segoe UI", 30, "bold"),
-                 bg=BG, fg=TEXT_DARK).pack()
-        tk.Label(header, text="একটি মোড বেছে নিন এবং অনুশীলন শুরু করুন",
-                 font=("Segoe UI", 13), bg=BG, fg=MUTED).pack(pady=(6, 0))
+        tk.Label(
+            header,
+            text=title_text,
+            font=("Segoe UI", 30, "bold"),
+            bg=BG,
+            fg=TEXT_DARK
+        ).pack()
 
+        tk.Label(
+            header,
+            text="একটি মোড বেছে নিন এবং অনুশীলন শুরু করুন",
+            font=("Segoe UI", 13),
+            bg=BG,
+            fg=MUTED
+        ).pack(pady=(6, 0))     
         cards_wrap = tk.Frame(self, bg=BG)
         cards_wrap.pack(expand=True, pady=20)
 
@@ -605,6 +635,7 @@ class TypingPage(tk.Frame):
         self.words = []
         self.start_time = None
         self.finished = False
+        self.avro_raw = ""
 
         top = tk.Frame(self, bg=BG)
         top.pack(fill="x", padx=28, pady=(22, 6))
@@ -644,7 +675,7 @@ class TypingPage(tk.Frame):
                               bg=CARD_BG, relief="flat", bd=0, padx=18, pady=14,
                               highlightthickness=0)
         self.entry.pack(fill="both", expand=True)
-        self.entry.bind("<KeyRelease>", self.on_type)
+        self.entry.bind("<KeyPress>", self.on_key_press)
 
         # --- পরবর্তী শব্দের ইংরেজি টাইপিং হিন্ট (অভ্র/বিজয় মোডে) ---
         self.hint_bar = tk.Frame(self, bg=CARD_BORDER, padx=1, pady=1)
@@ -722,6 +753,7 @@ class TypingPage(tk.Frame):
         self.start_time = None
         self.finished = False
         self.entry.delete("1.0", tk.END)
+        self.avro_raw = ""
         self.render_paragraph()
         self.progress.config(value=0)
         self.stat_words.config(text=f"0 / {len(self.words)}")
@@ -750,11 +782,10 @@ class TypingPage(tk.Frame):
             self.hint_caption_label.config(text="🔤  পরবর্তী শব্দ — ইংরেজি হিন্ট (আনুমানিক)")
             self.hint_text_label.config(text=hint, font=("Consolas", 15, "bold"), fg=PRIMARY_DARK)
         elif self.mode == "bijoy":
-            hint = self.words[idx]
+            hint = "Hint অপশন বিজয়ের জন্য এখনো বানানো হয়নি; পরবর্তী আপডেটে যোগ হবে ইনশা-আল্লাহ।"
             self.hint_strip.config(bg=PRIMARY)
-            self.hint_caption_label.config(text="⌨️  পরবর্তী শব্দ — এই কী-গুলো চাপুন")
+            self.hint_caption_label.config(text="🔤  পরবর্তী শব্দ — ইংরেজি হিন্ট (আনুমানিক)")
             self.hint_text_label.config(text=hint, font=("Consolas", 15, "bold"), fg=PRIMARY_DARK)
-
     def render_paragraph(self, typed_words=None, current_prefix=""):
         typed_words = typed_words or []
         self.para_box.config(state="normal")
@@ -771,12 +802,161 @@ class TypingPage(tk.Frame):
                 tag = "pending"
             self.para_box.insert(tk.END, w + " ", tag)
         self.para_box.config(state="disabled")
-
     def on_type(self, event=None):
-        if self.start_time is None:
+        """English/Bijoy mode-এর typing validation এবং statistics update করে।"""
+
+        raw = self.entry.get("1.0", "end-1c")
+
+        if self.start_time is None and raw:
             self.start_time = time.time()
 
-        raw = self.entry.get("1.0", tk.END).rstrip("\n")
+        # Space দিয়ে আলাদা হওয়া শব্দ
+        ends_with_space = raw.endswith(" ")
+        parts = raw.split()
+
+        if ends_with_space:
+            typed_words = parts
+            current_prefix = ""
+        else:
+            typed_words = parts[:-1] if parts else []
+            current_prefix = parts[-1] if parts else ""
+
+        # Paragraph render
+        self.render_paragraph(
+            typed_words,
+            current_prefix
+        )
+
+        self.update_hint(typed_words)
+
+        # Correct word count
+        correct = sum(
+            1
+            for i, word in enumerate(typed_words)
+            if i < len(self.words) and word == self.words[i]
+        )
+
+        total_typed = len(typed_words)
+
+        # Accuracy
+        accuracy = (
+            (correct / total_typed) * 100
+            if total_typed > 0
+            else 100
+        )
+
+        # WPM
+        if self.start_time is not None:
+            elapsed = max(time.time() - self.start_time, 0.01)
+        else:
+            elapsed = 0.01
+
+        wpm = (total_typed / elapsed) * 60
+
+        # Statistics update
+        self.stat_words.config(
+            text=f"{total_typed} / {len(self.words)}"
+        )
+
+        self.stat_correct.config(
+            text=str(correct)
+        )
+
+        self.stat_acc.config(
+            text=f"{accuracy:.0f}%"
+        )
+
+        self.stat_wpm.config(
+            text=f"{wpm:.0f} WPM"
+        )
+
+        # Progress
+        pct = (
+            min(100, (total_typed / len(self.words)) * 100)
+            if self.words
+            else 0
+        )
+
+        self.progress.config(value=pct)
+
+        # Finished
+        if (
+            not self.finished
+            and total_typed >= len(self.words)
+        ):
+            self.finished = True
+
+            final_correct = sum(
+                1
+                for i, word in enumerate(
+                    typed_words[:len(self.words)]
+                )
+                if word == self.words[i]
+            )
+
+            final_acc = (
+                final_correct / len(self.words) * 100
+                if self.words
+                else 100
+            )
+
+            self.after(
+                150,
+                lambda: messagebox.showinfo(
+                    "সম্পন্ন হয়েছে!",
+                    f"প্যারাগ্রাফ শেষ হয়েছে।\n"
+                    f"নির্ভুলতা: {final_acc:.0f}%\n"
+                    f"গতি: {wpm:.0f} WPM\n\n"
+                    "'নতুন প্যারাগ্রাফ' চাপুন পরেরটির জন্য।"
+                )
+            )
+    def on_key_press(self, event=None):
+        # English / Bijoy mode
+        if self.mode != "bangla":
+            self.after_idle(self.on_type)
+            return
+
+        if event is None:
+            return "break"
+
+        key = event.keysym
+
+        # Backspace
+        if key == "BackSpace":
+            if self.avro_raw:
+                self.avro_raw = self.avro_raw[:-1]
+
+        elif key == "Delete":
+            return "break"
+
+        elif key == "Return":
+            self.avro_raw += "\n"
+
+        elif key == "space":
+            self.avro_raw += " "
+
+        elif len(event.char) == 1 and event.char.isprintable():
+            self.avro_raw += event.char
+
+        else:
+            return "break"
+
+        try:
+            converted = avro.parse(self.avro_raw)
+        except Exception:
+            converted = self.avro_raw
+
+        self.entry.delete("1.0", tk.END)
+        self.entry.insert("1.0", converted)
+        self.entry.mark_set(tk.INSERT, tk.END)
+
+        self.update_typing_stats(converted)
+
+        return "break"
+    def update_typing_stats(self, raw):
+        if self.start_time is None and raw:
+            self.start_time = time.time()
+
         ends_with_space = raw.endswith(" ")
         parts = raw.split()
 
@@ -790,31 +970,73 @@ class TypingPage(tk.Frame):
         self.render_paragraph(typed_words, current_prefix)
         self.update_hint(typed_words)
 
-        correct = sum(1 for i, w in enumerate(typed_words)
-                      if i < len(self.words) and w == self.words[i])
+        correct = sum(
+            1 for i, w in enumerate(typed_words)
+            if i < len(self.words) and w == self.words[i]
+        )
+
         total_typed = len(typed_words)
-        accuracy = (correct / total_typed * 100) if total_typed else 100
-        elapsed = max(time.time() - self.start_time, 0.01)
+
+        accuracy = (
+            correct / total_typed * 100
+            if total_typed else 100
+        )
+
+        if self.start_time is not None:
+            elapsed = max(time.time() - self.start_time, 0.01)
+        else:
+            elapsed = 0.01
+
         wpm = (total_typed / elapsed) * 60
 
-        self.stat_words.config(text=f"{total_typed} / {len(self.words)}")
-        self.stat_correct.config(text=str(correct))
-        self.stat_acc.config(text=f"{accuracy:.0f}%")
-        self.stat_wpm.config(text=f"{wpm:.0f} WPM")
-        pct = min(100, (total_typed / len(self.words)) * 100) if self.words else 0
+        self.stat_words.config(
+            text=f"{total_typed} / {len(self.words)}"
+        )
+
+        self.stat_correct.config(
+            text=str(correct)
+        )
+
+        self.stat_acc.config(
+            text=f"{accuracy:.0f}%"
+        )
+
+        self.stat_wpm.config(
+            text=f"{wpm:.0f} WPM"
+        )
+
+        pct = (
+            min(100, (total_typed / len(self.words)) * 100)
+            if self.words else 0
+        )
+
         self.progress.config(value=pct)
 
         if not self.finished and total_typed >= len(self.words):
             self.finished = True
-            final_correct = sum(1 for i, w in enumerate(typed_words[:len(self.words)])
-                                 if w == self.words[i])
-            final_acc = final_correct / len(self.words) * 100
-            self.after(150, lambda: messagebox.showinfo(
-                "সম্পন্ন হয়েছে!",
-                f"প্যারাগ্রাফ শেষ হয়েছে।\nনির্ভুলতা: {final_acc:.0f}%\n"
-                f"গতি: {wpm:.0f} WPM\n\n'নতুন প্যারাগ্রাফ' চাপুন পরেরটির জন্য।"))
 
+            final_correct = sum(
+                1
+                for i, w in enumerate(
+                    typed_words[:len(self.words)]
+                )
+                if w == self.words[i]
+            )
 
+            final_acc = (
+                final_correct / len(self.words) * 100
+            )
+
+            self.after(
+                150,
+                lambda: messagebox.showinfo(
+                    "সম্পন্ন হয়েছে!",
+                    f"প্যারাগ্রাফ শেষ হয়েছে।\n"
+                    f"নির্ভুলতা: {final_acc:.0f}%\n"
+                    f"গতি: {wpm:.0f} WPM\n\n"
+                    "'নতুন প্যারাগ্রাফ' চাপুন পরেরটির জন্য।"
+                )
+            )
 if __name__ == "__main__":
     app = App()
     app.mainloop()
