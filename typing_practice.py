@@ -20,12 +20,97 @@ EXE বানানোর নিয়ম:
 
 import json
 import os
+import sys
 import random
 import time
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def get_base_dir():
+    """
+    ডেটা ফাইল (paragraphs*.json) কোন ফোল্ডারে থাকবে তা ঠিক করে।
+
+    - সাধারণ .py স্ক্রিপ্ট হিসেবে চালালে: স্ক্রিপ্টের ফোল্ডার।
+    - PyInstaller দিয়ে বানানো --onefile EXE হিসেবে চালালে: __file__ আসলে
+      একটা টেম্পোরারি এক্সট্র্যাকশন ফোল্ডারে (_MEIPASS) পয়েন্ট করে, যেটা
+      প্রোগ্রাম বন্ধ হলেই মুছে যায়। তাই সেক্ষেত্রে EXE ফাইলটা যেখানে
+      আছে (sys.executable) সেই ফোল্ডার ব্যবহার করা হয়, যাতে ডেটা স্থায়ী থাকে।
+    """
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(os.path.abspath(sys.executable))
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+BASE_DIR = get_base_dir()
+LOGO_CANDIDATES = ["image.png", "logo.png", "ripon.png", "image.jpg", "logo.jpg"]
+LOGO_SIZE = 110  # গোল লোগোর ব্যাস (পিক্সেল)
+
+
+def find_logo_path():
+    """BASE_DIR এ উপরের নামগুলোর মধ্যে যেটা প্রথমে পাওয়া যায় সেই ফাইলের পাথ রিটার্ন করে।"""
+    for name in LOGO_CANDIDATES:
+        p = os.path.join(BASE_DIR, name)
+        if os.path.exists(p):
+            return p
+    return None
+
+
+def _log_logo_issue(msg):
+    """
+    লোগো লোড না হলে exe (--windowed) বা ডাবল-ক্লিকে চালানো অবস্থায় print()
+    কোথাও দেখা যায় না (কনসোল থাকে না) — তাই কারণটা একটা লগ ফাইলে লিখে রাখা
+    হয়, যাতে পরে খুলে দেখা যায় ঠিক কী সমস্যা হয়েছিল।
+    """
+    print(msg)
+    try:
+        log_path = os.path.join(BASE_DIR, "logo_debug.log")
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(msg + "\n")
+    except Exception:
+        pass
+
+
+def load_circular_logo(path, size=LOGO_SIZE):
+    """
+    যদি path না দেওয়া থাকে (None), বা ফাইল না পাওয়া যায়, বা Pillow ইনস্টল না
+    থাকে — তাহলে None রিটার্ন করে, সেক্ষেত্রে অ্যাপ লোগো ছাড়াই স্বাভাবিকভাবে চলবে।
+    সমস্যার কারণ logo_debug.log ফাইলে লেখা থাকবে।
+    """
+    try:
+        from PIL import Image, ImageDraw, ImageOps, ImageTk
+    except ImportError as e:
+        _log_logo_issue(f"[লোগো] Pillow ইমপোর্ট করা যায়নি — 'pip install pillow' করুন। ({e})")
+        return None
+
+    if not path or not os.path.exists(path):
+        _log_logo_issue(f"[লোগো] ছবির ফাইল খুঁজে পাওয়া যায়নি। BASE_DIR = {BASE_DIR}, "
+                         f"খোঁজা হয়েছে: {LOGO_CANDIDATES}")
+        return None
+
+    # Pillow 9.1+ এ Image.LANCZOS এর বদলে Image.Resampling.LANCZOS সুপারিশ করা
+    # হয়, আর কিছু Pillow ভার্সনে পুরনো নামটা কাজ নাও করতে পারে — তাই দুই
+    # রকমই চেষ্টা করা হচ্ছে, যেন Pillow-এর ভার্সন যাই হোক না কেন কাজ করে।
+    resample = getattr(Image, "Resampling", Image).LANCZOS
+
+    try:
+        img = Image.open(path).convert("RGBA")
+        # ছবিটিকে size x size বর্গক্ষেত্রে ঠিকমতো fit/crop করে নেয়
+        img = ImageOps.fit(img, (size, size), resample)
+
+        # গোলাকার মাস্ক তৈরি (অ্যান্টি-অ্যালিয়াসিং সহ মসৃণ কিনারার জন্য
+        # ৪ গুণ বড় সাইজে বৃত্ত এঁকে পরে ছোট করে আনা হচ্ছে)
+        scale = 4
+        mask = Image.new("L", (size * scale, size * scale), 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0, size * scale, size * scale), fill=255)
+        mask = mask.resize((size, size), resample)
+
+        img.putalpha(mask)
+        return ImageTk.PhotoImage(img)
+    except Exception as e:
+        _log_logo_issue(f"[লোগো] ছবি প্রসেস করতে সমস্যা হয়েছে (path={path}): {e}")
+        return None
 
 # ----------------------------------------------------------------------------
 # থিম / রঙ
@@ -130,6 +215,72 @@ MODES = {
 }
 MODE_ORDER = ["bangla", "english", "bijoy"]
 
+# ----------------------------------------------------------------------------
+# অভ্র ফোনেটিক হিন্ট (আনুমানিক) — বাংলা ইউনিকোড অক্ষর থেকে সম্ভাব্য ইংরেজি
+# কী-স্ট্রোক অনুমান করার জন্য। এটা omicronlab-এর Avro Phonetic নিয়মের একটা
+# সরলীকৃত সংস্করণ, তাই সবসময় ১০০% হুবহু মিলবে না — শুধু শেখার সহায়ক হিন্ট।
+# ----------------------------------------------------------------------------
+AVRO_MAP = {
+    "অ": "o", "আ": "a", "ই": "i", "ঈ": "I", "উ": "u", "ঊ": "U",
+    "ঋ": "rri", "এ": "e", "ঐ": "OI", "ও": "O", "ঔ": "OU",
+    "ক": "k", "খ": "kh", "গ": "g", "ঘ": "gh", "ঙ": "Ng",
+    "চ": "c", "ছ": "Ch", "জ": "j", "ঝ": "jh", "ঞ": "NG",
+    "ট": "T", "ঠ": "Th", "ড": "D", "ঢ": "Dh", "ণ": "N",
+    "ত": "t", "থ": "th", "দ": "d", "ধ": "dh", "ন": "n",
+    "প": "p", "ফ": "ph", "ব": "b", "ভ": "bh", "ম": "m",
+    "য": "z", "র": "r", "ল": "l", "শ": "sh", "ষ": "Sh", "স": "s", "হ": "h",
+    "ড়": "r", "ঢ়": "rh", "য়": "y", "ৎ": "t",
+    "ং": "ng", "ঃ": ":", "ঁ": "^",
+    "া": "a", "ি": "i", "ী": "I", "ু": "u", "ূ": "U", "ৃ": "rri",
+    "ে": "e", "ৈ": "OI", "ো": "O", "ৌ": "OU",
+    "্": "",
+    "০": "0", "১": "1", "২": "2", "৩": "3", "৪": "4",
+    "৫": "5", "৬": "6", "৭": "7", "৮": "8", "৯": "9",
+    "।": ".",
+}
+
+
+def bangla_word_to_avro_hint(word):
+    """
+    একটি বাংলা শব্দকে আনুমানিক অভ্র-ফোনেটিক (ইংরেজি) হিন্টে রূপান্তর করে।
+
+    সাধারণ char-by-char ম্যাপিং যথেষ্ট না, কারণ বাংলা ব্যঞ্জনবর্ণের নিজস্ব
+    (অন্তর্নিহিত) 'অ' স্বরধ্বনি থাকে যখন তার পরে কোনো কার (vowel sign) বা
+    হসন্ত থাকে না — যেমন "পরিবর্তন" ঠিকভাবে লিখতে হলে প-র-ি-ব-র-্-ত-ন এর
+    মাঝে সেই লুকানো 'o' যোগ করতে হয় (poriborton), নাহলে ভুল হিন্ট (pribrtn)
+    তৈরি হয়। শব্দের একদম শেষ ব্যঞ্জনবর্ণে এই 'o' সাধারণত উচ্চারণে বাদ পড়ে
+    (schwa deletion) — যেমন "কলম" → kolom, "poriborton" এর শেষ 'ন' → n,
+    তাই সেটা আলাদাভাবে বাদ রাখা হয়েছে।
+    """
+    vowel_signs = set("ািীুূৃেৈোৌ")
+    consonants = set("কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎ")
+    hasant = "্"
+
+    out = []
+    i = 0
+    n = len(word)
+    while i < n:
+        ch = word[i]
+        if ch in consonants:
+            out.append(AVRO_MAP.get(ch, ch))
+            nxt = word[i + 1] if i + 1 < n else ""
+            if nxt == hasant:
+                i += 2  # হসন্ত নিজে কিছু যোগ করে না, শুধু পরের ব্যঞ্জনের সাথে যুক্ত হয়
+                continue
+            if nxt in vowel_signs:
+                i += 1  # পরের কার নিজেই স্বরধ্বনি বহন করবে, তাই inherent 'o' লাগবে না
+                continue
+            is_word_final = (i == n - 1)
+            if not is_word_final:
+                out.append("o")
+            i += 1
+        else:
+            out.append(AVRO_MAP.get(ch, ch))
+            i += 1
+    return "".join(out)
+
+
+
 
 def load_paragraphs(mode_key):
     path = MODES[mode_key]["data_file"]
@@ -190,7 +341,7 @@ class Card(tk.Frame):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Ripon Typing Practice — বাংলা | English | বিজয়")
+        self.title("Typing Practice — বাংলা | English | বিজয়")
         self.configure(bg=BG)
         self.minsize(760, 560)
 
@@ -220,6 +371,16 @@ class App(tk.Tk):
 
         self.current_mode = "bangla"
         self.paragraphs = {key: load_paragraphs(key) for key in MODES}
+
+        # --- circle logo (image.png থেকে) ---
+        # self.logo_image রেফারেন্স ধরে না রাখলে Tkinter এটাকে গার্বেজ
+        # কালেক্ট করে ফেলবে আর লোগো অদৃশ্য হয়ে যাবে — তাই controller-এই রাখা হলো
+        self.logo_image = load_circular_logo(find_logo_path(), LOGO_SIZE)
+        if self.logo_image is not None:
+            try:
+                self.iconphoto(True, self.logo_image)
+            except tk.TclError:
+                pass
 
         self.container = tk.Frame(self, bg=BG)
         self.container.pack(fill="both", expand=True)
@@ -263,8 +424,15 @@ class HomePage(tk.Frame):
         self.controller = controller
 
         header = tk.Frame(self, bg=BG)
-        header.pack(fill="x", pady=(56, 8))
-        tk.Label(header, text="⌨️  Ripon Typing Tool", font=("Segoe UI", 30, "bold"),
+        header.pack(fill="x", pady=(40, 8))
+
+        if controller.logo_image is not None:
+            tk.Label(header, image=controller.logo_image, bg=BG).pack(pady=(0, 10))
+            title_text = "Typing Practice"
+        else:
+            title_text = "⌨️  Typing Practice"
+
+        tk.Label(header, text=title_text, font=("Segoe UI", 30, "bold"),
                  bg=BG, fg=TEXT_DARK).pack()
         tk.Label(header, text="একটি মোড বেছে নিন এবং অনুশীলন শুরু করুন",
                  font=("Segoe UI", 13), bg=BG, fg=MUTED).pack(pady=(6, 0))
@@ -446,7 +614,7 @@ class TypingPage(tk.Frame):
         self.title_label = tk.Label(top, text="", font=("Segoe UI", 18, "bold"),
                                      bg=BG, fg=TEXT_DARK)
         self.title_label.pack(side="left", padx=18)
-        HoverButton(top, bg=ACCENT_YELLOW if False else "#FDCB6E",
+        HoverButton(top, bg="#FDCB6E",
                     hover_bg="#F0B94D", fg=TEXT_DARK, text="⟳  নতুন প্যারাগ্রাফ",
                     command=self.new_paragraph).pack(side="right")
 
@@ -478,8 +646,29 @@ class TypingPage(tk.Frame):
         self.entry.pack(fill="both", expand=True)
         self.entry.bind("<KeyRelease>", self.on_type)
 
+        # --- পরবর্তী শব্দের ইংরেজি টাইপিং হিন্ট (অভ্র/বিজয় মোডে) ---
+        self.hint_bar = tk.Frame(self, bg=CARD_BORDER, padx=1, pady=1)
+        hint_inner = tk.Frame(self.hint_bar, bg=CARD_BG)
+        hint_inner.pack(fill="both", expand=True)
+
+        hint_strip = tk.Frame(hint_inner, bg=PRIMARY, width=5)
+        hint_strip.pack(side="left", fill="y")
+        self.hint_strip = hint_strip
+
+        hint_content = tk.Frame(hint_inner, bg=CARD_BG)
+        hint_content.pack(side="left", fill="both", expand=True, padx=(14, 16), pady=10)
+
+        self.hint_caption_label = tk.Label(hint_content, text="", font=("Segoe UI", 9),
+                                            bg=CARD_BG, fg=MUTED, anchor="w")
+        self.hint_caption_label.pack(anchor="w")
+        self.hint_text_label = tk.Label(hint_content, text="", font=("Consolas", 15, "bold"),
+                                         bg=CARD_BG, fg=PRIMARY_DARK, anchor="w",
+                                         justify="left", wraplength=900)
+        self.hint_text_label.pack(anchor="w", pady=(2, 0))
+
         # --- স্ট্যাটস ---
-        stats_card = Card(self, outer_bg=BG)
+        self.stats_card = Card(self, outer_bg=BG)
+        stats_card = self.stats_card
         stats_card.pack(fill="x", padx=28, pady=(0, 22))
         stats_inner = stats_card.inner
         stats_inner.configure(padx=20, pady=16)
@@ -512,6 +701,13 @@ class TypingPage(tk.Frame):
         self.hint_label.config(text=m["hint"])
         self.para_box.config(font=m["font"])
         self.entry.config(font=m["font"])
+
+        # অভ্র/বিজয় মোডে ইংরেজি-টাইপিং হিন্ট বার দেখানো হবে, English মোডে দরকার নেই
+        if self.mode == "english":
+            self.hint_bar.pack_forget()
+        else:
+            self.hint_bar.pack(fill="x", padx=28, pady=(0, 14), before=self.stats_card)
+
         self.new_paragraph()
 
     def new_paragraph(self):
@@ -532,7 +728,32 @@ class TypingPage(tk.Frame):
         self.stat_correct.config(text="0")
         self.stat_acc.config(text="100%")
         self.stat_wpm.config(text="0 WPM")
+        self.update_hint([])
         self.entry.focus_set()
+
+    def update_hint(self, typed_words):
+        """বর্তমানে হাইলাইট করা (পরবর্তী) শব্দের ইংরেজি-টাইপিং হিন্ট আপডেট করে।"""
+        if self.mode == "english" or not self.words:
+            return
+        idx = len(typed_words)
+
+        if idx >= len(self.words):
+            self.hint_strip.config(bg=SECONDARY)
+            self.hint_caption_label.config(text="✓ সম্পন্ন")
+            self.hint_text_label.config(text="পরবর্তী প্যারাগ্রাফে যান",
+                                         font=("Segoe UI", 13, "bold"), fg=SECONDARY_DARK)
+            return
+
+        if self.mode == "bangla":
+            hint = bangla_word_to_avro_hint(self.words[idx])
+            self.hint_strip.config(bg=PRIMARY)
+            self.hint_caption_label.config(text="🔤  পরবর্তী শব্দ — ইংরেজি হিন্ট (আনুমানিক)")
+            self.hint_text_label.config(text=hint, font=("Consolas", 15, "bold"), fg=PRIMARY_DARK)
+        elif self.mode == "bijoy":
+            hint = self.words[idx]
+            self.hint_strip.config(bg=PRIMARY)
+            self.hint_caption_label.config(text="⌨️  পরবর্তী শব্দ — এই কী-গুলো চাপুন")
+            self.hint_text_label.config(text=hint, font=("Consolas", 15, "bold"), fg=PRIMARY_DARK)
 
     def render_paragraph(self, typed_words=None, current_prefix=""):
         typed_words = typed_words or []
@@ -567,6 +788,7 @@ class TypingPage(tk.Frame):
             current_prefix = parts[-1] if parts else ""
 
         self.render_paragraph(typed_words, current_prefix)
+        self.update_hint(typed_words)
 
         correct = sum(1 for i, w in enumerate(typed_words)
                       if i < len(self.words) and w == self.words[i])
