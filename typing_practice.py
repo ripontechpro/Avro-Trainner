@@ -42,7 +42,7 @@ def get_base_dir():
 
 
 BASE_DIR = get_base_dir()
-LOGO_CANDIDATES = ["ripon.png"]
+LOGO_CANDIDATES = ["logo.png"]
 LOGO_SIZE = 110  # গোল লোগোর ব্যাস (পিক্সেল)
 
 
