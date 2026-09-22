@@ -25,7 +25,7 @@ import random
 import time
 import tkinter as tk
 from tkinter import ttk, messagebox
-import avro
+
 def get_base_dir():
     """
     ডেটা ফাইল (paragraphs*.json) কোন ফোল্ডারে থাকবে তা ঠিক করে।
