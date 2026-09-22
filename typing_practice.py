@@ -26,7 +26,6 @@ import time
 import tkinter as tk
 from tkinter import ttk, messagebox
 import avro
-from bijoy_converter import unicode_to_bijoy
 def get_base_dir():
     """
     ডেটা ফাইল (paragraphs*.json) কোন ফোল্ডারে থাকবে তা ঠিক করে।
@@ -43,7 +42,7 @@ def get_base_dir():
 
 
 BASE_DIR = get_base_dir()
-LOGO_CANDIDATES = ["image.png", "logo.png", "ripon.png", "image.jpg", "logo.jpg"]
+LOGO_CANDIDATES = ["ripon.png"]
 LOGO_SIZE = 110  # গোল লোগোর ব্যাস (পিক্সেল)
 
 
