@@ -11,7 +11,10 @@ Typing Practice — বাংলা (অভ্র) | English | বিজয়
 
 EXE বানানোর নিয়ম:
     pip install pyinstaller
-    pyinstaller --onefile --windowed --name TypingPractice typing_practice.py
+    pyinstaller --onefile --windowed --name AvroTrainer avro_trainer.py
+    pyinstaller --onefile --windowed --name BijoyTrainer bijoy_trainer.py
+    pyinstaller --onefile --windowed --name EnglishTrainer english_trainer.py
+    pyinstaller --onefile --windowed --name TypingPractice --add-binary "dist/AvroTrainer.exe;." --add-binary "dist/BijoyTrainer.exe;." --add-binary "dist/EnglishTrainer.exe;." typing_practice.py
 
 কীবোর্ড শর্টকাট:
     F11     - পূর্ণ স্ক্রিন (edge-to-edge) চালু/বন্ধ
@@ -23,9 +26,11 @@ import os
 import sys
 import random
 import time
+import subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox
-
+import bijoy_converter
+import avro 
 def get_base_dir():
     """
     ডেটা ফাইল (paragraphs*.json) কোন ফোল্ডারে থাকবে তা ঠিক করে।
@@ -466,12 +471,33 @@ class HomePage(tk.Frame):
             bg=BG,
             fg=MUTED
         ).pack(pady=(6, 0))     
-        cards_wrap = tk.Frame(self, bg=BG)
-        cards_wrap.pack(expand=True, pady=20)
+        menu_area = tk.Frame(self, bg=BG)
+        menu_area.pack(expand=True, pady=16)
+        cards_wrap = tk.Frame(menu_area, bg=BG)
+        cards_wrap.pack(pady=(0, 12))
 
         self.cards_wrap = cards_wrap
         for i, key in enumerate(MODE_ORDER):
             self.build_card(cards_wrap, key).grid(row=0, column=i, padx=16, pady=10, sticky="n")
+
+        extra_group = Card(menu_area, outer_bg=BG)
+        extra_group.pack(fill="x", padx=16)
+        extra_group.inner.configure(padx=18, pady=12)
+        tk.Label(extra_group.inner, text="অতিরিক্ত টিউটর", font=UI_FONT_BOLD,
+                 bg=CARD_BG, fg=TEXT_DARK).pack(anchor="w")
+        trainer_buttons = tk.Frame(extra_group.inner, bg=CARD_BG)
+        trainer_buttons.pack(fill="x", pady=(8, 0))
+        for index, (key, label) in enumerate((
+            ("avro", "Avro Trainer"),
+            ("bijoy", "Bijoy Trainer"),
+            ("english", "English Trainer"),
+        )):
+            HoverButton(
+                trainer_buttons, bg=PRIMARY, hover_bg=PRIMARY_DARK,
+                text=f"{label} খুলুন  ▶",
+                command=lambda trainer=key: self.open_companion_trainer(trainer)
+            ).pack(side="left", fill="x", expand=True,
+                   padx=(0 if index == 0 else 6, 0 if index == 2 else 6))
 
         tk.Label(self, text="F11 = ফুলস্ক্রিন টগল   •   Esc = ফুলস্ক্রিন থেকে বের হন",
                  font=("Segoe UI", 9), bg=BG, fg=MUTED).pack(side="bottom", pady=16)
@@ -506,6 +532,42 @@ class HomePage(tk.Frame):
             widget.bind("<Leave>", lambda e, c=card: c.set_hover(False))
 
         return card
+
+    def open_companion_trainer(self, trainer_key):
+        trainers = {
+            "avro": ("Avro Trainer", "avro_trainer.py", "AvroTrainer.exe"),
+            "bijoy": ("Bijoy Trainer", "bijoy_trainer.py", "BijoyTrainer.exe"),
+            "english": ("English Trainer", "english_trainer.py", "EnglishTrainer.exe"),
+        }
+        label, script_name, exe_name = trainers[trainer_key]
+
+        if getattr(sys, "frozen", False):
+            bundled_dir = getattr(sys, "_MEIPASS", BASE_DIR)
+            candidates = [
+                os.path.join(bundled_dir, exe_name),
+                os.path.join(BASE_DIR, exe_name),
+            ]
+            trainer_path = next((path for path in candidates if os.path.isfile(path)), None)
+            command = [trainer_path] if trainer_path else None
+        else:
+            script_path = os.path.join(BASE_DIR, script_name)
+            exe_path = os.path.join(BASE_DIR, exe_name)
+            if os.path.isfile(script_path):
+                command = [sys.executable, script_path]
+            elif os.path.isfile(exe_path):
+                command = [exe_path]
+            else:
+                command = None
+
+        if command is None:
+            missing_file = exe_name if getattr(sys, "frozen", False) else script_name
+            messagebox.showerror("টিউটর পাওয়া যায়নি", f"{label} চালু করা যায়নি। "
+                                 f"প্রয়োজনীয় ফাইল: {missing_file}")
+            return
+        try:
+            subprocess.Popen(command, cwd=BASE_DIR)
+        except OSError as e:
+            messagebox.showerror("টিউটর চালু করা যায়নি", f"{label} চালু করতে সমস্যা হয়েছে:\n{e}")
 
 
 # ----------------------------------------------------------------------------
@@ -747,7 +809,7 @@ class TypingPage(tk.Frame):
                                  "প্রথমে ডেটা ম্যানেজ থেকে কিছু প্যারাগ্রাফ যোগ করুন।")
             self.controller.show_frame("ManagePage", mode=self.mode)
             return
-        text = random.choice(paragraphs)
+        text  = random.choice(paragraphs)
         self.words = text.split()
         self.start_time = None
         self.finished = False
@@ -781,25 +843,51 @@ class TypingPage(tk.Frame):
             self.hint_caption_label.config(text="🔤  পরবর্তী শব্দ — ইংরেজি হিন্ট (আনুমানিক)")
             self.hint_text_label.config(text=hint, font=("Consolas", 15, "bold"), fg=PRIMARY_DARK)
         elif self.mode == "bijoy":
-            hint = "Hint অপশন বিজয়ের জন্য এখনো বানানো হয়নি; পরবর্তী আপডেটে যোগ হবে ইনশা-আল্লাহ।"
+            hint = "এটি বন্ধ আছে।"
             self.hint_strip.config(bg=PRIMARY)
             self.hint_caption_label.config(text="🔤  পরবর্তী শব্দ — ইংরেজি হিন্ট (আনুমানিক)")
             self.hint_text_label.config(text=hint, font=("Consolas", 15, "bold"), fg=PRIMARY_DARK)
     def render_paragraph(self, typed_words=None, current_prefix=""):
         typed_words = typed_words or []
+
         self.para_box.config(state="normal")
         self.para_box.delete("1.0", tk.END)
+
         for i, w in enumerate(self.words):
-            if i < len(typed_words):
-                tag = "correct" if typed_words[i] == w else "incorrect"
-            elif i == len(typed_words):
-                if current_prefix and not w.startswith(current_prefix):
-                    tag = "incorrect"
-                else:
+
+            # =========================
+            # AVRO → FULL WORD CHECK
+            # =========================
+            if self.mode == "bangla":
+                if i < len(typed_words):
+                    tag = "correct" if typed_words[i] == w else "incorrect"
+
+                elif i == len(typed_words):
+                    # Avro-তে current word-এর alphabet check হবে না
                     tag = "current"
+
+                else:
+                    tag = "pending"
+
+            # =========================
+            # ENGLISH / BIJOY
+            # → CHARACTER CHECK
+            # =========================
             else:
-                tag = "pending"
+                if i < len(typed_words):
+                    tag = "correct" if typed_words[i] == w else "incorrect"
+
+                elif i == len(typed_words):
+                    if current_prefix and not w.startswith(current_prefix):
+                        tag = "incorrect"
+                    else:
+                        tag = "current"
+
+                else:
+                    tag = "pending"
+
             self.para_box.insert(tk.END, w + " ", tag)
+
         self.para_box.config(state="disabled")
     def on_type(self, event=None):
         """English/Bijoy mode-এর typing validation এবং statistics update করে।"""
