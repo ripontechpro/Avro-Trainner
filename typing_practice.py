@@ -29,11 +29,7 @@ import time
 import subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox
-<<<<<<< HEAD
-import bijoy_converter
-=======
->>>>>>> 5aa04f6 (Version 1.5)
-import avro 
+
 def get_base_dir():
     """
     ডেটা ফাইল (paragraphs*.json) কোন ফোল্ডারে থাকবে তা ঠিক করে।

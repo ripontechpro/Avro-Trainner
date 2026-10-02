@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-"""Bijoy Bangla Typing Tutor (single file). Run: python bijoy_typing_tutor.py\nAlways fullscreen. Close button = bottom-left (or Ctrl+Q). F2 = kar order (age/pore)"""
-import tkinter as tk, tkinter.font as tkf, json, os, time, unicodedata
-=======
 """Bijoy Bangla Typing Tutor (single file). Run: python bijoy_trainer.py
 Always fullscreen. Close button = bottom-left (or Ctrl+Q).
 F2 = kar order (age/pore)   F3 = Training <-> Test mode   Ctrl+R = reset this level's training hour
@@ -12,7 +8,6 @@ import tkinter as tk, tkinter.font as tkf, json, os, time, unicodedata, random
 TRAIN_SECS = 3600   # training time per level (1 hour)
 IDLE_SECS = 10     # no key for this long -> training clock pauses
 TEST_HINTS = False # Test mode hides key chips + keyboard guide (a key is revealed after 3 misses); True = show hints
->>>>>>> 5aa04f6 (Version 1.5)
 
 BSAVE = os.path.join(os.path.expanduser("~"), ".bijoy_typing_progress.json")
 
@@ -32,22 +27,12 @@ def base_key(ch):
 # ---------------- Theme ----------------
 BG, CARD, INK, MUTED = "#f3f4fb", "#ffffff", "#1f2340", "#8a8fb0"
 ACC, GOOD, BAD = "#5b5bf0", "#22b573", "#ef4444"
-<<<<<<< HEAD
-SAVE = os.path.join(os.path.expanduser("~"), ".bangla_typing_progress.json")
-=======
->>>>>>> 5aa04f6 (Version 1.5)
 nfd = lambda t: unicodedata.normalize("NFD", t)
 
 def lerp(a, b, t):
     A = [int(a[i:i+2], 16) for i in (1, 3, 5)]; B = [int(b[i:i+2], 16) for i in (1, 3, 5)]
     return "#%02x%02x%02x" % tuple(int(x + (y - x) * t) for x, y in zip(A, B))
 
-<<<<<<< HEAD
-class App(tk.Tk):
-    def __init__(self, layout):
-        super().__init__()
-        self.L = layout
-=======
 def mmss(s):
     s = max(0, int(s)); return f"{s // 60:02d}:{s % 60:02d}"
 
@@ -55,17 +40,12 @@ class App(tk.Tk):
     def __init__(self, layout):
         super().__init__()
         self.L = layout; self.mode = "train"
->>>>>>> 5aa04f6 (Version 1.5)
         self.title("Bangla Typing Tutor"); self.attributes("-fullscreen", True); self.update_idletasks()
         self.W, self.H = self.winfo_screenwidth(), self.winfo_screenheight()
         self.s = min(self.W / 1180, self.H / 760)
         self.ox, self.oy = (self.W - 1180 * self.s) / 2, (self.H - 760 * self.s) / 2
-<<<<<<< HEAD
-        self.protocol("WM_DELETE_WINDOW", self.destroy); self.bind("<Control-q>", lambda e: self.destroy()); self.bind("<F2>", self.toggle_opt)
-=======
         self.protocol("WM_DELETE_WINDOW", self.closetool); self.bind("<Control-q>", self.closetool)
         self.bind("<F2>", self.toggle_opt); self.bind("<F3>", self.toggle_mode); self.bind("<Control-r>", self.reset_hour)
->>>>>>> 5aa04f6 (Version 1.5)
         fams = set(tkf.families())
         bn = next((f for f in ("Nirmala UI", "Kalpurush", "Noto Sans Bengali", "Vrinda") if f in fams), "TkDefaultFont")
         F = lambda z, w="normal": tkf.Font(family=bn, size=max(6, int(z * self.s)), weight=w)
@@ -73,10 +53,6 @@ class App(tk.Tk):
         self.fk = tkf.Font(family="Consolas", size=max(8, int(17 * self.s)), weight="bold")
         self.fu = tkf.Font(family="Segoe UI", size=max(7, int(10 * self.s)))
         self.fv = tkf.Font(family="Segoe UI", size=max(10, int(20 * self.s)), weight="bold")
-<<<<<<< HEAD
-        try: self.prog = json.load(open(self.L["save"]))
-        except Exception: self.prog = {}
-=======
         try:
             with open(self.L["save"], encoding="utf-8") as f: self.prog = json.load(f)
         except Exception: self.prog = {}
@@ -84,18 +60,12 @@ class App(tk.Tk):
         if not isinstance(self.prog.get("_train"), dict): self.prog["_train"] = {}
         now = time.monotonic()
         self.dirty, self.last_save, self.last_tick, self.last_key, self.barw = False, now, now, 0.0, 0
->>>>>>> 5aa04f6 (Version 1.5)
         self.c = tk.Canvas(self, width=self.W, height=self.H, bg=BG, highlightthickness=0); self.c.pack(fill="both", expand=True)
         self.build(); self.bind("<Key>", self.on_key); self.select(0); self.tick()
 
     def pk(self):
         return self.name + self.L.get("tag", "")
 
-<<<<<<< HEAD
-    def toggle_opt(self, e=None):
-        if self.L.get("toggle"):
-            self.L = self.L["toggle"](); self.c.itemconfig(self.modet, text=self.L["mode"]); self.select(self.cur)
-=======
     def trained(self, name=None):
         return self.prog["_train"].get(name or self.name, 0)
 
@@ -109,7 +79,7 @@ class App(tk.Tk):
 
     def closetool(self, event=None):
         self.save()
-        exit(0)
+        os._exit(0)
 
     # ---- mode switches ----
     def toggle_opt(self, e=None):
@@ -132,7 +102,6 @@ class App(tk.Tk):
 
     def reset_hour(self, e=None):
         self.prog["_train"].pop(self.name, None); self.dirty = True; self.select(self.cur)
->>>>>>> 5aa04f6 (Version 1.5)
 
     def keylabel(self, ch, x, y, K):
         lab = self.L["labels"]
@@ -152,28 +121,11 @@ class App(tk.Tk):
         sc = self.s; x1, x2, y1, y2, r = self.ox + x1*sc, self.ox + x2*sc, self.oy + y1*sc, self.oy + y2*sc, r*sc
         p = [x1+r,y1,x2-r,y1,x2,y1,x2,y1+r,x2,y2-r,x2,y2,x2-r,y2,x1+r,y2,x1,y2,x1,y2-r,x1,y1+r,x1,y1]
         return self.c.create_polygon(p, smooth=True, **kw)
-<<<<<<< HEAD
-    def closetool(self, event=None):
-        exit(0)
-    def build(self):
-        c = self.c
-        self.rr(20, 20, 300, 740, fill=CARD, outline="")
-        self.tx(160, 62, text="বাংলা টাইপিং", font=self.fb["m"], fill=ACC)
-        self.tx(160, 96, text=self.L["title"], font=self.fu, fill=MUTED)
-        self.lbtn = []
-        for i, name in enumerate(self.L["lessons"]):
-            y = 130 + i * 56; tg = f"les{i}"
-            r = self.rr(36, y, 284, y + 46, 12, fill=CARD, outline="", tags=tg)
-            t = self.tx(56, y + 23, text=name, font=self.fb["s"], fill=INK, anchor="w", tags=tg)
-            c.tag_bind(tg, "<Button-1>", lambda e, i=i: self.select(i)); self.lbtn.append((r, t))
-        self.best = self.tx(160, 556, text="", font=self.fu, fill=MUTED, justify="center")
-        self.modet = self.tx(160, 610, text=self.L["mode"], font=self.fu, fill=ACC, justify="center")
-=======
 
     def build(self):
         c = self.c
         self.rr(20, 20, 300, 740, fill=CARD, outline="")
-        self.tx(160, 62, text="বিজয় টাইপিং", font=self.fb["m"], fill=ACC)
+        self.tx(160, 62, text="বাংলা টাইপিং", font=self.fb["m"], fill=ACC)
         self.tx(160, 96, text=self.L["title"], font=self.fu, fill=MUTED)
         self.lbtn, self.checks = [], []
         for i, name in enumerate(self.L["lessons"]):
@@ -190,7 +142,6 @@ class App(tk.Tk):
             c.tag_bind(tg, "<Button-1>", lambda e, m=m: self.set_mode(m)); self.mbtn[m] = (r, t)
         self.best = self.tx(160, 568, text="", font=self.fu, fill=MUTED, justify="center")
         self.modet = self.tx(160, 632, text="", font=self.fu, fill=ACC, justify="center")
->>>>>>> 5aa04f6 (Version 1.5)
         self.rr(36, 680, 154, 722, 14, fill=ACC, outline="", tags="rs")
         self.tx(95, 701, text="↻  Restart", font=self.fu, fill="white", tags="rs")
         cb = self.rr(166, 680, 284, 722, 14, fill=BAD, outline="", tags="cl")
@@ -199,19 +150,11 @@ class App(tk.Tk):
         c.tag_bind("cl", "<Enter>", lambda e: c.itemconfig(cb, fill="#c62828"))
         c.tag_bind("cl", "<Leave>", lambda e: c.itemconfig(cb, fill=BAD))
         c.tag_bind("rs", "<Button-1>", lambda e: self.select(self.cur))
-<<<<<<< HEAD
-        self.stat = {}
-        for i, (k, lab) in enumerate([("wpm", "WPM"), ("acc", "ACCURACY"), ("time", "TIME"), ("err", "ERRORS")]):
-            x = 320 + i * 214
-            self.rr(x, 20, x + 200, 90, 14, fill=CARD, outline="")
-            self.tx(x + 16, 38, text=lab, font=self.fu, fill=MUTED, anchor="w")
-=======
         self.stat, self.statlab = {}, {}
         for i, (k, lab) in enumerate([("wpm", "WPM"), ("acc", "ACCURACY"), ("time", "TIME"), ("err", "ERRORS")]):
             x = 320 + i * 214
             self.rr(x, 20, x + 200, 90, 14, fill=CARD, outline="")
             self.statlab[k] = self.tx(x + 16, 38, text=lab, font=self.fu, fill=MUTED, anchor="w")
->>>>>>> 5aa04f6 (Version 1.5)
             self.stat[k] = self.tx(x + 16, 66, text="0", font=self.fv, fill=INK, anchor="w")
         self.rr(320, 110, 1160, 450, 20, fill=CARD, outline="")
         self.rr(350, 128, 1130, 134, 3, fill="#e8eafc", outline="")
@@ -233,10 +176,7 @@ class App(tk.Tk):
         for nm, x1, x2 in (("shift", 386, 481), (" ", 531, 861)):
             yy = y if nm == "shift" else y + P_
             self.kb[nm] = (self.rr(x1, yy, x2, yy + K, 9, fill="#e9ecef", outline=""), self.tx((x1+x2)/2, yy + K/2, text=nm.upper() if nm != " " else "SPACE", font=self.fu, fill=INK), "#e9ecef")
-<<<<<<< HEAD
-=======
         self.refresh_mode()
->>>>>>> 5aa04f6 (Version 1.5)
 
     # ---- animation helper ----
     def fade(self, item, prop, a, b, steps=9, ms=28, i=0):
@@ -250,25 +190,6 @@ class App(tk.Tk):
 
     # ---- logic ----
     def select(self, i):
-<<<<<<< HEAD
-        LS = self.L["lessons"]; self.cur, self.items = i, LS[list(LS)[i]]; self.name = list(LS)[i]
-        self.idx = self.pos = self.ok = self.err = 0; self.start = None; self.done = False
-        for j, (r, t) in enumerate(self.lbtn):
-            self.c.itemconfig(r, fill=ACC if j == i else CARD); self.c.itemconfig(t, fill="white" if j == i else INK)
-        b = self.prog.get(self.pk())
-        self.c.itemconfig(self.best, text=f"Best\n{b['wpm']:.0f} WPM · {b['acc']:.0f}%" if b else "Best\n—")
-        self.c.itemconfig(self.out, text="", fill=INK); self.c.itemconfig(self.badge, text="")
-        self.show_item()
-
-    def show_item(self):
-        bn, keys = self.items[self.idx]
-        self.target, self.keys, self.pos, self.typed = bn, keys, 0, ""
-        self.c.itemconfig(self.item_txt, text=bn, font=self.fb["xl"] if len(bn) < 6 else self.fb["l"] if len(bn) < 14 else self.fb["m"])
-        w = max(6, int(780 * (self.idx / len(self.items))))
-        self.set_bar(w)
-        self.chips(); self.highlight()
-
-=======
         if self.dirty: self.save()
         LS = self.L["lessons"]; self.cur, self.name = i, list(LS)[i]; self.items = LS[self.name]
         self.pos = self.ok = self.err = self.miss = self.idx = 0
@@ -306,16 +227,12 @@ class App(tk.Tk):
         w = max(6, int(780 * frac))
         if force or w != self.barw: self.barw = w; self.set_bar(w)
 
->>>>>>> 5aa04f6 (Version 1.5)
     def set_bar(self, w):
         self.c.delete(self.bar); self.bar = self.rr(350, 128, 350 + max(w, 8), 134, 3, fill=ACC, outline="")
 
     def chips(self, done_anim=False):
         self.c.delete("chip")
-<<<<<<< HEAD
-=======
         if self.mode == "test" and not TEST_HINTS: return           # test mode: no key hints
->>>>>>> 5aa04f6 (Version 1.5)
         n = len(self.keys); cw, gap = 40, 6
         x0 = 740 - (n * (cw + gap) - gap) / 2
         for i, ch in enumerate(self.keys):
@@ -328,11 +245,7 @@ class App(tk.Tk):
 
     def highlight(self):
         for r, t, base in self.kb.values(): self.c.itemconfig(r, fill=base)
-<<<<<<< HEAD
-        if self.pos < len(self.keys):
-=======
         if self.pos < len(self.keys) and self.hints():
->>>>>>> 5aa04f6 (Version 1.5)
             k, sh = self.L["base_key"](self.keys[self.pos])
             if k in self.kb: self.c.itemconfig(self.kb[k][0], fill=ACC)
             if sh: self.c.itemconfig(self.kb["shift"][0], fill="#ff922b")
@@ -343,44 +256,17 @@ class App(tk.Tk):
             self.fade(self.kb[k][0], "fill", col, self.kb[k][2])
 
     def on_key(self, e):
-<<<<<<< HEAD
-        if self.done or not e.char or e.char in "\r\t\x1b\x08" or not e.char.isprintable(): return
-        if self.start is None: self.start = time.time()
-        if e.char == self.keys[self.pos]:
-            self.ok += 1; self.pos += 1; self.typed += e.char
-=======
         if self.done and e.char == "\r": return self.next_level()
         if self.done or not e.char or e.char in "\r\t\x1b\x08" or not e.char.isprintable(): return
         now = time.monotonic(); self.last_key = now
         if self.start is None: self.start = now
         if e.char == self.keys[self.pos]:
             self.ok += 1; self.pos += 1; self.typed += e.char; self.miss = 0
->>>>>>> 5aa04f6 (Version 1.5)
             self.c.itemconfig(self.out, text=self.L["convert"](self.typed)); self.fade(self.out, "fill", ACC, INK)
             self.c.itemconfig(self.badge, text="typing…", fill=MUTED)
             if self.pos == len(self.keys): return self.complete(e.char)
             self.chips(True); self.highlight(); self.flash_key(e.char, "#86efac")
         else:
-<<<<<<< HEAD
-            self.err += 1; self.shake(); self.flash_key(e.char, "#fca5a5")
-            self.c.itemconfig(self.item_txt, fill=BAD); self.after(220, lambda: self.c.itemconfig(self.item_txt, fill=INK))
-
-    def complete(self, last):
-        got = self.L["convert"](self.typed)
-        good = nfd(got) == nfd(self.target)
-        if not good: self.err += 1
-        self.c.itemconfig(self.out, text=got)
-        self.fade(self.out, "fill", GOOD if good else BAD, GOOD if good else BAD)
-        self.c.itemconfig(self.badge, text="✓ Perfect match" if good else f"✗ expected {self.target}", fill=GOOD if good else BAD)
-        self.fade(self.item_txt, "fill", GOOD, INK, 14, 30)
-        self.idx += 1
-        if self.idx >= len(self.items): return self.finish()
-        self.show_item()
-        self.c.itemconfig(self.badge, text="✓ Perfect match" if good else f"✗ expected", fill=GOOD if good else BAD)
-
-    def stats(self):
-        el = time.time() - self.start if self.start else 0
-=======
             self.err += 1; self.miss += 1; self.shake(); self.flash_key(e.char, "#fca5a5")
             if self.miss == 3: self.highlight()                      # test mode: reveal the key after 3 misses
             self.c.itemconfig(self.item_txt, fill=BAD); self.after(220, lambda: self.c.itemconfig(self.item_txt, fill=INK))
@@ -409,30 +295,11 @@ class App(tk.Tk):
         now = time.monotonic()
         if self.mode == "train": el = self.active
         else: el = (self.end or now) - self.start if self.start is not None else 0
->>>>>>> 5aa04f6 (Version 1.5)
         wpm = (self.ok / 5) / (el / 60) if el > 1 else 0
         tot = self.ok + self.err
         return el, wpm, 100 * self.ok / tot if tot else 100
 
     def tick(self):
-<<<<<<< HEAD
-        el, wpm, acc = self.stats()
-        for k, v in (("wpm", f"{wpm:.0f}"), ("acc", f"{acc:.0f}%"), ("time", f"{int(el//60):02d}:{int(el%60):02d}"), ("err", str(self.err))):
-            self.c.itemconfig(self.stat[k], text=v)
-        self.after(200, self.tick)
-
-    def finish(self):
-        self.done = True
-        el, wpm, acc = self.stats()
-        if wpm > self.prog.get(self.pk(), {"wpm": -1})["wpm"]:
-            self.prog[self.pk()] = {"wpm": wpm, "acc": acc}
-            try: json.dump(self.prog, open(SAVE, "w"))
-            except Exception: pass
-        b = self.prog[self.pk()]
-        self.c.itemconfig(self.best, text=f"Best\n{b['wpm']:.0f} WPM · {b['acc']:.0f}%")
-        self.c.itemconfig(self.item_txt, text="শাবাশ! 🎉", font=self.fb["xl"]); self.set_bar(780)
-        self.c.delete("chip"); self.tx(740, 284, text=f"{wpm:.0f} WPM  ·  {acc:.0f}% accuracy  ·  {self.err} errors", font=self.fb["sb"], fill=MUTED, tags="chip")
-=======
         now = time.monotonic(); dt = min(now - self.last_tick, 1.0); self.last_tick = now
         if self.mode == "train" and self.start is not None and not self.done and now - self.last_key <= IDLE_SECS:
             self.active += dt; tr = self.prog["_train"]; tr[self.name] = tr.get(self.name, 0) + dt; self.dirty = True
@@ -471,7 +338,6 @@ class App(tk.Tk):
         self.c.itemconfig(self.item_txt, text="শাবাশ! 🎉", font=self.fb["xl"]); self.set_bar(780)
         self.summary(f"{wpm:.0f} WPM  ·  {acc:.0f}% accuracy  ·  {self.err} errors" + ("  ·  New best!" if new_best else ""),
                      "Enter = next level   ·   Restart = try again")
->>>>>>> 5aa04f6 (Version 1.5)
         self.highlight()
 
 
