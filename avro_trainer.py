@@ -212,7 +212,12 @@ class App(tk.Tk):
         self.build(); self.bind("<Key>", self.on_key); self.select(0); self.tick()
 
     def closetool(self, event=None):
+<<<<<<< HEAD
         self.commit(); self.destroy()
+=======
+        self.commit()
+        exit(0)
+>>>>>>> 5aa04f6 (Version 1.5)
 
     def toggle_fs(self, e=None):
         self.attributes("-fullscreen", not self.attributes("-fullscreen"))
