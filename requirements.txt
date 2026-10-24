@@ -1,0 +1,3 @@
+PySide6
+# optional: built-in Avro typing in "Paragraph practice" (otherwise use your system Avro keyboard)
+# pyavrophonetic

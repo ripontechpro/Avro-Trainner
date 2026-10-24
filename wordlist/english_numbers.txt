@@ -1,0 +1,26 @@
+# English trainer - Level 4.1 numbers & symbols in text
+# Ek line = ek ta item.
+# '# ' (# er por space) diye shuru line = comment.
+2024
+7:30
+$19.99
+50%
+3.14
+100/200
+(555)
+12-34
+#7
+@45
+1,000
+8*9=72
+4+5=9
+100%
+25th
+$5
+99.9
+12:45
+3x4
+1/2
+40-60
+5>3
+(2+3)*4

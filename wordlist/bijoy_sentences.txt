@@ -1,0 +1,10 @@
+# Bijoy trainer - ৬. বাক্য
+# Ek line = ek ta item, Bangla Unicode e likhun (Bijoy key sequence app nijei toiri kore).
+# '# ' (# er por space) diye shuru line = comment.
+# Editor er 'Validate' button diye check korte paren.
+আমি বাংলায় গান গাই
+আমি ভাত খাই
+আকাশ নীল
+পাখি গান গায়
+সে স্কুলে যায়
+আমি বাংলা ভালোবাসি

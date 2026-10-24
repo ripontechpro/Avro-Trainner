@@ -1,0 +1,37 @@
+# English trainer - Level 4.1 words with punctuation
+# Ek line = ek ta item.
+# '# ' (# er por space) diye shuru line = comment.
+don't
+can't
+it's
+(yes)
+[ok]
+{x}
+who?
+why?
+wow!
+hi!
+"quote"
+'single'
+a/b
+x+y
+a=b
+#tag
+@home
+50%
+$25
+&more
+a-b
+one_two
+C:\dir
+~/home
+10*5
+5<7
+7>5
+a|b
+^up
+`tick`
+yes;
+no:
+Mr.
+e.g.,

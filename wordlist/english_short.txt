@@ -1,0 +1,13 @@
+# English trainer - Level 5 short sentences
+# Ek line = ek ta item.
+# '# ' (# er por space) diye shuru line = comment.
+The quick brown fox jumps over the lazy dog.
+Practice makes perfect.
+Keep your fingers on the home row.
+Typing is a useful skill.
+Slow and steady wins the race.
+Look at the screen, not at the keys.
+Accuracy comes before speed.
+Every expert was once a beginner.
+Sit straight and relax your hands.
+A smooth rhythm beats a fast burst.

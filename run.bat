@@ -1,1 +1,2 @@
-python  .\typing_practice.py
+@echo off
+python ripon_typing_tutor.py

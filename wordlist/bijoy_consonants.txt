@@ -1,0 +1,41 @@
+# Bijoy trainer - ২. ব্যঞ্জনবর্ণ
+# Ek line = ek ta item, Bangla Unicode e likhun (Bijoy key sequence app nijei toiri kore).
+# '# ' (# er por space) diye shuru line = comment.
+# Editor er 'Validate' button diye check korte paren.
+ক
+খ
+গ
+ঘ
+ঙ
+চ
+ছ
+জ
+ঝ
+ঞ
+ট
+ঠ
+ড
+ঢ
+ণ
+ত
+থ
+দ
+ধ
+ন
+প
+ফ
+ব
+ভ
+ম
+য
+র
+ল
+শ
+ষ
+স
+হ
+ড়
+ঢ়
+য়
+ং
+ঁ

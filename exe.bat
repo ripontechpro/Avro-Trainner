@@ -1,4 +1,7 @@
-pyinstaller --onefile --windowed --name AvroTrainer avro_trainer.py
-pyinstaller --onefile --windowed --name BijoyTrainer bijoy_trainer.py
-pyinstaller --onefile --windowed --name EnglishTrainer english_trainer.py
-pyinstaller --onefile --windowed --name TypingPractice --add-binary "dist/AvroTrainer.exe;." --add-binary "dist/BijoyTrainer.exe;." --add-binary "dist/EnglishTrainer.exe;." typing_practice.py
+@echo off
+rem One single EXE.  Needs:  pip install PySide6 pyinstaller
+rem The wordlist folder is bundled inside the EXE AND is read/edited from the "wordlist" folder
+rem placed next to the EXE (copy the wordlist folder next to RiponTypingTutor.exe to customise it).
+pyinstaller --onefile --windowed --name RiponTypingTutor --icon logo.ico ^
+  --add-data "logo.png;." --add-data "logo.ico;." --add-data "wordlist;wordlist" ^
+  ripon_typing_tutor.py

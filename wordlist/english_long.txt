@@ -1,0 +1,9 @@
+# English trainer - Level 5 long sentences
+# Ek line = ek ta item.
+# '# ' (# er por space) diye shuru line = comment.
+Learning to type without looking at the keyboard saves a lot of time every single day.
+Good typists keep their wrists relaxed and let each finger return to the home row.
+Short daily practice sessions work better than one very long session each week.
+Computers have changed the way we write, learn, work and talk to one another.
+Speed will come by itself once your fingers know where every key is hiding.
+Take a short break every half hour so your hands and eyes can rest.

@@ -1,0 +1,22 @@
+# Bijoy trainer - ৫. শব্দ
+# Ek line = ek ta item, Bangla Unicode e likhun (Bijoy key sequence app nijei toiri kore).
+# '# ' (# er por space) diye shuru line = comment.
+# Editor er 'Validate' button diye check korte paren.
+আমি
+তুমি
+আমার
+বাংলা
+মা
+বাবা
+ভাই
+বোন
+ভাত
+পানি
+বই
+দেশ
+ফুল
+নদী
+আকাশ
+স্কুল
+সোনার
+পাখি

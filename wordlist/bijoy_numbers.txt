@@ -1,0 +1,17 @@
+# Bijoy trainer - ৭. সংখ্যা
+# Ek line = ek ta item, Bangla Unicode e likhun (Bijoy key sequence app nijei toiri kore).
+# '# ' (# er por space) diye shuru line = comment.
+# Editor er 'Validate' button diye check korte paren.
+১
+২
+৩
+৪
+৫
+৬
+৭
+৮
+৯
+০
+১২৩
+৪৫৬
+৭৮৯০

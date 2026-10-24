@@ -1,0 +1,13 @@
+# English trainer - Level 5 numbers & punctuation sentences
+# Ek line = ek ta item.
+# '# ' (# er por space) diye shuru line = comment.
+Hello, my name is Sam; I am 25 years old.
+Can you send me the file by 5:30 p.m.?
+"Well done!" she said. "Keep going."
+The total cost is $49.99 (tax included).
+Visit www.example.com or email sam@mail.com today.
+Wow! That was 100% better than yesterday's try.
+Step 1: open the file; step 2: save it.
+It's 9 o'clock - time for a break, isn't it?
+Pack: 3 shirts, 2 pairs of jeans & 1 jacket.
+Is it true that 7 + 8 = 15? Yes, it is!
